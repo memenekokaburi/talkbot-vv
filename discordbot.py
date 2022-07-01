@@ -115,9 +115,6 @@ async def on_message(message):
             if not message.content.startswith(prefix):
                 text = message.content
 
-                # Add author's name
-                text = message.author.name + '、' + text
-
                 # Replace dictionary
                 with psycopg2.connect(database_url) as conn:
                     with conn.cursor() as cur:

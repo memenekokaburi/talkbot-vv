@@ -8,7 +8,7 @@ import emoji
 import json
 import psycopg2
 
-prefix = os.getenv('DISCORD_BOT_PREFIX', default='🦑')
+prefix = os.getenv('DISCORD_BOT_PREFIX', default='!')
 token = os.environ['DISCORD_BOT_TOKEN']
 voicevox_key = os.environ['VOICEVOX_KEY']
 voicevox_speaker = os.getenv('VOICEVOX_SPEAKER', default='2')
@@ -19,28 +19,28 @@ database_url = os.environ.get('DATABASE_URL')
 
 @client.event
 async def on_ready():
-    presence = f'{prefix}ヘルプ | 0/{len(client.guilds)}サーバー'
+    presence = f'{prefix}cmd | 0/{len(client.guilds)}server'
     await client.change_presence(activity=discord.Game(name=presence))
 
 @client.event
 async def on_guild_join(guild):
-    presence = f'{prefix}ヘルプ | {len(client.voice_clients)}/{len(client.guilds)}サーバー'
+    presence = f'{prefix}cmd | {len(client.voice_clients)}/{len(client.guilds)}サーバー'
     await client.change_presence(activity=discord.Game(name=presence))
 
 @client.event
 async def on_guild_remove(guild):
-    presence = f'{prefix}ヘルプ | {len(client.voice_clients)}/{len(client.guilds)}サーバー'
+    presence = f'{prefix}cmd | {len(client.voice_clients)}/{len(client.guilds)}サーバー'
     await client.change_presence(activity=discord.Game(name=presence))
 
 @client.command()
-async def 接続(ctx):
+async def hello(ctx):
     if ctx.message.guild:
         if ctx.author.voice is None:
-            await ctx.send('ボイスチャンネルに接続してから呼び出してください。')
+            await ctx.send('ボイスチャンネルに接続してから呼んでね☆')
         else:
             if ctx.guild.voice_client:
                 if ctx.author.voice.channel == ctx.guild.voice_client.channel:
-                    await ctx.send('接続済みです。')
+                    await ctx.send('接続してます！')
                 else:
                     await ctx.voice_client.disconnect()
                     await asyncio.sleep(0.5)
@@ -49,7 +49,7 @@ async def 接続(ctx):
                 await ctx.author.voice.channel.connect()
 
 @client.command()
-async def 切断(ctx):
+async def bye(ctx):
     if ctx.message.guild:
         if ctx.voice_client is None:
             await ctx.send('ボイスチャンネルに接続していません。')
@@ -57,9 +57,9 @@ async def 切断(ctx):
             await ctx.voice_client.disconnect()
 
 @client.command()
-async def 辞書登録(ctx, *args):
+async def dic(ctx, *args):
     if len(args) < 2:
-        await ctx.send(f'「{prefix}辞書登録 単語 よみがな」で入力してください。')
+        await ctx.send(f'「{prefix}dic 単語 よみがな」で入力してください。')
     else:
         with psycopg2.connect(database_url) as conn:
             with conn.cursor() as cur:
@@ -72,7 +72,7 @@ async def 辞書登録(ctx, *args):
                 await ctx.send(f'辞書登録しました：{word}→{kana}\n')
 
 @client.command()
-async def 辞書削除(ctx, arg):
+async def dic_delete(ctx, arg):
     with psycopg2.connect(database_url) as conn:
         with conn.cursor() as cur:
             guild_id = ctx.guild.id
@@ -91,7 +91,7 @@ async def 辞書削除(ctx, arg):
                 await ctx.send(f'辞書削除しました：{word}')
 
 @client.command()
-async def 辞書確認(ctx):
+async def dic_check(ctx):
     with psycopg2.connect(database_url) as conn:
         with conn.cursor() as cur:
             sql = 'SELECT * FROM dictionary WHERE guildId = %s'
@@ -108,6 +108,8 @@ async def 辞書確認(ctx):
 
 @client.event
 async def on_message(message):
+    if message.author == client.user:
+        return
     if message.guild.voice_client:
         if not message.author.bot:
             if not message.content.startswith(prefix):
@@ -244,13 +246,13 @@ async def on_command_error(ctx, error):
     await ctx.send(error_msg)
 
 @client.command()
-async def ヘルプ(ctx):
+async def cmd(ctx):
     message = f'''◆◇◆{client.user.name}の使い方◆◇◆
-{prefix}接続：ボイスチャンネルに接続します。
-{prefix}切断：ボイスチャンネルから切断します。
-{prefix}辞書確認：辞書に登録されている単語を確認します。
-{prefix}辞書追加 単語 よみがな：辞書に[単語]を[よみがな]として追加します。
-{prefix}辞書削除 単語：辞書から[単語]のよみがなを削除します。'''
+{prefix}hello：ボイスチャンネルに接続します。
+{prefix}bye：ボイスチャンネルから切断します。
+{prefix}dic 単語 よみがな：辞書に[単語]を[よみがな]として追加します。
+{prefix}dic_check：辞書に登録されている単語を確認します。
+{prefix}dic_delete 単語：辞書から[単語]のよみがなを削除します。'''
     await ctx.send(message)
 
 client.run(token)
